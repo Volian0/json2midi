@@ -1,8 +1,14 @@
+#ifndef MIDI_H
+#define MIDI_H
+
 #include <vector>   // For std::vector<>
 #include <cstring>  // For std::strlen()
 #include <fstream>
 #include <cstdint>
 #include <stdexcept>
+
+namespace midi
+{
 
 /* First define a custom wrapper over std::vector<byte>
  * so we can quickly push_back multiple bytes with a single call.
@@ -167,3 +173,7 @@ public:
         file.flush();
     }
 };
+
+}
+
+#endif
