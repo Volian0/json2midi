@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <iterator>
+#include <algorithm>
 
 namespace midi
 {
@@ -167,7 +169,7 @@ public:
                 tracks[a].size() >>  0);
             insert(end(), tracks[a].begin(), tracks[a].end());
         }
-        for (auto const& byte : *this) file << byte;
+        std::copy(begin(), end(), std::ostream_iterator<uint8_t>(file));
         file.flush();
     }
 };
