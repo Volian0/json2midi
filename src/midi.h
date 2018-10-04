@@ -2,10 +2,10 @@
 #define MIDI_H
 
 #include <vector>   // For std::vector<>
-#include <cstring>  // For std::strlen()
 #include <fstream>
 #include <cstdint>
 #include <stdexcept>
+#include <string>
 
 namespace midi
 {
@@ -24,9 +24,9 @@ public:
         AddBytes(args...);
     }
     template<typename... Args>
-    void AddBytes(const char* s, Args...args)
+    void AddBytes(const std::string& s, Args...args)
     {
-        insert(end(), s, s + std::strlen(s));
+        insert(end(), s.begin(), s.end());
         AddBytes(args...);
     }
     void AddBytes() { }
@@ -111,9 +111,9 @@ public:
         { AddEvent(0xE0|ch, value&0x7F, (value>>7)&0x7F); }
 
     // Methods for appending metadata into the track:
-    void AddText(uint16_t texttype, const char* text)
+    void AddText(uint16_t texttype, const std::string& text)
     {
-        AddMetaEvent(texttype, std::strlen(text), text);
+        AddMetaEvent(texttype, text.size(), text);
     }
 };
 
@@ -139,12 +139,10 @@ public:
     {
         if(trackno >= tracks.size())
         {
-            tracks.reserve(16);
             tracks.resize(trackno+1);
         }
 
-        MIDItrack& result = tracks[trackno];
-        return result;
+        return tracks[trackno];
     }
 
     void Finish()
