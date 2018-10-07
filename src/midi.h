@@ -6,8 +6,6 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
-#include <iterator>
-#include <algorithm>
 
 namespace midi
 {
@@ -103,9 +101,9 @@ public:
     }
 
     // Key-related parameters: channel number, note number, pressure
-    void KeyOn(uint16_t ch, uint16_t n, uint16_t p)    { if(n>=0)AddEvent(0x90|ch, n, p); }
-    void KeyOff(uint16_t ch, uint16_t n, uint16_t p)   { if(n>=0)AddEvent(0x80|ch, n, p); }
-    void KeyTouch(uint16_t ch, uint16_t n, uint16_t p) { if(n>=0)AddEvent(0xA0|ch, n, p); }
+    void KeyOn(uint8_t ch, uint8_t n, uint8_t p)    { if((n|p)<0x80)AddEvent(0x90|ch, n, p); }
+    void KeyOff(uint8_t ch, uint8_t n, uint8_t p)   { if((n|p)<0x80)AddEvent(0x80|ch, n, p); }
+    void KeyTouch(uint8_t ch, uint8_t n, uint8_t p) { if((n|p)<0x80)AddEvent(0xA0|ch, n, p); }
     // Events with other types of parameters:
     void Control(uint16_t ch, uint16_t c, uint16_t v) { AddEvent(0xB0|ch, c, v); }
     void Patch(uint16_t ch, uint16_t patchno)    { AddEvent(0xC0|ch, patchno); }
@@ -169,7 +167,7 @@ public:
                 tracks[a].size() >>  0);
             insert(end(), tracks[a].begin(), tracks[a].end());
         }
-        std::copy(begin(), end(), std::ostream_iterator<uint8_t>(file));
+        file.write(reinterpret_cast<const char*>(data()),size());
         file.flush();
     }
 };
