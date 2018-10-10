@@ -123,10 +123,9 @@ class MIDIfile: public MIDIvec
 protected:
     std::vector<MIDItrack> tracks;
     uint32_t deltaticks;
-    std::ofstream file;
 public:
-    MIDIfile(const std::string& filename,uint32_t ppq)
-        : MIDIvec(), tracks(), deltaticks(ppq), file(filename,std::ios::binary|std::ios::trunc)
+    MIDIfile(uint32_t ppq)
+        : MIDIvec(), tracks(), deltaticks(ppq)
     {
     }
 
@@ -145,7 +144,7 @@ public:
         return tracks[trackno];
     }
 
-    void Finish()
+    void Create(const std::string& filename)
     {
         clear();
         AddBytes(
@@ -167,11 +166,13 @@ public:
                 tracks[a].size() >>  0);
             insert(end(), tracks[a].begin(), tracks[a].end());
         }
+        tracks.clear();
+        std::ofstream file;
+        file.exceptions(std::ios_base::failbit);
+        file.open(filename,std::ios::binary|std::ios::trunc);
         file.write(reinterpret_cast<const char*>(data()),size());
         file.flush();
     }
 };
 
 }
-
-#endif
