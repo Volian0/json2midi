@@ -244,6 +244,7 @@ song::song(const std::vector<std::string>& args)
     : arguments{args}
 {
     ParseJSON();
+    VerifyTracks();
     MakeMIDI(args.at(0));
 }
 
@@ -308,6 +309,26 @@ void song::ParseJSON()
             parts.back().tracks.back().parse(track);
         }
         parts.back().VerifyLength();
+    }
+}
+
+void song::VerifyTracks()
+{
+    uint32_t max_size{};
+    for (const auto& p : parts)
+    {
+        if (p.tracks.size()>max_size) max_size = p.tracks.size();
+    }
+    for (auto& p : parts)
+    {
+        while (p.tracks.size()<max_size)
+        {
+            p.tracks.push_back(p.tracks.back());
+            for (auto& m : p.tracks.back().messages)
+            {
+                if (m.GetType()<2) m=message(0,3);
+            }
+        }
     }
 }
 
