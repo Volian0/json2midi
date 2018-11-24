@@ -107,7 +107,8 @@ void track::parse(const std::string& score)
                 ++i;
                 if (i==score.size()||score[i]=='.'||score[i]=='('
                         ||score[i]==')'||score[i]=='~'||score[i]=='['
-                        ||score[i]==']'||score[i]==','||score[i]==';')
+                        ||score[i]==']'||score[i]==','||score[i]==';'
+                        ||score[i]=='<'||score[i]=='>')
                 {
                     --i;
                     break;
