@@ -13,20 +13,21 @@ namespace midi
 /* First define a custom wrapper over std::vector<byte>
  * so we can quickly push_back multiple bytes with a single call.
  */
-class MIDIvec: public std::vector<uint8_t>
+class MIDIvec
 {
 public:
+    std::vector<uint8_t> bytes;
     // Methods for appending raw data into the vector:
     template<typename... Args>
     void AddBytes(uint8_t data, Args...args)
     {
-        push_back(data);
+        bytes.push_back(data);
         AddBytes(args...);
     }
     template<typename... Args>
     void AddBytes(const std::string& s, Args...args)
     {
-        insert(end(), s.begin(), s.end());
+        bytes.insert(bytes.end(), s.begin(), s.end());
         AddBytes(args...);
     }
     void AddBytes() { }
@@ -47,14 +48,18 @@ public:
     void AddDelay(uint32_t amount)
     {
         delay += amount;
-        if((delay|amount)>0xFFFFFFF) throw std::overflow_error("Time overflow");
+        if((delay|amount)>0xFFFFFFF)
+            throw std::overflow_error("Time overflow");
     }
 
     void AddVarLen(uint32_t t)
     {
-        if(t >> 21) AddBytes(0x80 | ((t >> 21) & 0x7F));
-        if(t >> 14) AddBytes(0x80 | ((t >> 14) & 0x7F));
-        if(t >>  7) AddBytes(0x80 | ((t >>  7) & 0x7F));
+        if(t >> 21)
+            AddBytes(0x80 | ((t >> 21) & 0x7F));
+        if(t >> 14)
+            AddBytes(0x80 | ((t >> 14) & 0x7F));
+        if(t >>  7)
+            AddBytes(0x80 | ((t >>  7) & 0x7F));
         AddBytes(((t >> 0) & 0x7F));
     }
 
@@ -87,9 +92,10 @@ public:
          * The event may furthermore beprefixed
          * with a number of meta events.
          */
-       Flush();
-       if(data != running_status) AddBytes(running_status = data);
-       AddBytes(args...);
+        Flush();
+        if(data != running_status)
+            AddBytes(running_status = data);
+        AddBytes(args...);
     }
     void AddEvent() { }
 
@@ -101,14 +107,34 @@ public:
     }
 
     // Key-related parameters: channel number, note number, pressure
-    void KeyOn(uint8_t ch, uint8_t n, uint8_t p)    { if((n|p)<0x80)AddEvent(0x90|ch, n, p); }
-    void KeyOff(uint8_t ch, uint8_t n, uint8_t p)   { if((n|p)<0x80)AddEvent(0x80|ch, n, p); }
-    void KeyTouch(uint8_t ch, uint8_t n, uint8_t p) { if((n|p)<0x80)AddEvent(0xA0|ch, n, p); }
+    void KeyOn(uint8_t ch, uint8_t n, uint8_t p)
+    {
+        if((n|p)<0x80)
+            AddEvent(0x90|ch, n, p);
+    }
+    void KeyOff(uint8_t ch, uint8_t n, uint8_t p)
+    {
+        if((n|p)<0x80)
+            AddEvent(0x80|ch, n, p);
+    }
+    void KeyTouch(uint8_t ch, uint8_t n, uint8_t p)
+    {
+        if((n|p)<0x80)
+            AddEvent(0xA0|ch, n, p);
+    }
     // Events with other types of parameters:
-    void Control(uint16_t ch, uint16_t c, uint16_t v) { AddEvent(0xB0|ch, c, v); }
-    void Patch(uint16_t ch, uint16_t patchno)    { AddEvent(0xC0|ch, patchno); }
+    void Control(uint16_t ch, uint16_t c, uint16_t v)
+    {
+        AddEvent(0xB0|ch, c, v);
+    }
+    void Patch(uint16_t ch, uint16_t patchno)
+    {
+        AddEvent(0xC0|ch, patchno);
+    }
     void Wheel(uint16_t ch, uint32_t value)
-        { AddEvent(0xE0|ch, value&0x7F, (value>>7)&0x7F); }
+    {
+        AddEvent(0xE0|ch, value&0x7F, (value>>7)&0x7F);
+    }
 
     // Methods for appending metadata into the track:
     void AddText(uint16_t texttype, const std::string& text)
@@ -129,12 +155,20 @@ public:
     {
     }
 
-    void AddLoopStart()  { (*this)[0].AddText(6, "loopStart"); }
-    void AddLoopEnd()    { (*this)[0].AddText(6, "loopEnd"); }
+    void AddLoopStart()
+    {
+        (*this)[0].AddText(6, "loopStart");
+    }
+    void AddLoopEnd()
+    {
+        (*this)[0].AddText(6, "loopEnd");
+    }
     void SetTempo(uint32_t tempo)
-    { (*this)[0].AddMetaEvent(0x51,3,  tempo>>16, tempo>>8, tempo); }
+    {
+        (*this)[0].AddMetaEvent(0x51,3,  tempo>>16, tempo>>8, tempo);
+    }
 
-    MIDItrack& operator[] (uint32_t trackno)
+    MIDItrack& operator[] (uint16_t trackno)
     {
         if(trackno >= tracks.size())
         {
@@ -146,7 +180,7 @@ public:
 
     void Create(const std::string& filename)
     {
-        clear();
+        bytes.clear();
         AddBytes(
             // MIDI signature (MThd and number 6)
             "MThd", 0,0,0,6,
@@ -160,17 +194,17 @@ public:
             tracks[a].AddMetaEvent(0x2F, 0);
             // Add the track into the MIDI file:
             AddBytes("MTrk",
-                tracks[a].size() >> 24,
-                tracks[a].size() >> 16,
-                tracks[a].size() >>  8,
-                tracks[a].size() >>  0);
-            insert(end(), tracks[a].begin(), tracks[a].end());
+                     tracks[a].bytes.size() >> 24,
+                     tracks[a].bytes.size() >> 16,
+                     tracks[a].bytes.size() >>  8,
+                     tracks[a].bytes.size() >>  0);
+            bytes.insert(bytes.end(), tracks[a].bytes.begin(), tracks[a].bytes.end());
         }
         tracks.clear();
         std::ofstream file;
         file.exceptions(std::ios_base::failbit);
         file.open(filename,std::ios::binary|std::ios::trunc);
-        file.write(reinterpret_cast<const char*>(data()),size());
+        file.write(reinterpret_cast<const char*>(bytes.data()),bytes.size());
         file.flush();
     }
 };
