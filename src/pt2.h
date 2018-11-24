@@ -13,9 +13,9 @@ namespace pt2
 class message
 {
 protected:
-    const uint32_t value;
+    uint32_t value;
 public:
-    uint8_t GetType() const; // 0 - note on, 1 - note off, 2 - length
+    uint8_t GetType() const; // 0 - note on, 1 - note off, 2 - length, 3 - ignore
     operator uint32_t() const;
     message(uint32_t,uint8_t); // sets value
 };
@@ -47,6 +47,7 @@ protected:
     std::vector<std::string> arguments;
     std::vector<part> parts;
     void ParseJSON();
+    void VerifyTracks();
     void MakeMIDI(const std::string&);
 public:
     song(const std::vector<std::string>&);
