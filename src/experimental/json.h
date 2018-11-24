@@ -179,7 +179,8 @@ class JsonFile
             s += 0xC0 | ((code >> 6) & 0x1F);
             s += 0x80 | (code & 0x3F);
         }
-        else if (code <= 0xFFFF)
+        //else if (code <= 0xFFFF)
+        else
         {
             s += 0xE0 | ((code >> 12) & 0xF);
             s += 0x80 | ((code >> 6) & 0x3F);
