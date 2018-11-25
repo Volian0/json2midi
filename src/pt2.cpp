@@ -98,7 +98,7 @@ void track::parse(const std::string& score)
         {
             if ((score[i]=='<'||(score[i]>='0'&&score[i]<='9'))&&mode==0)
                 continue;
-            if (score[i]=='>'&&mode==5)
+            if ((score[i]=='>'||score[i]=='{'||score[i]=='}'||(score[i]>='0'&&score[i]<='9'))&&mode==5)
                 continue;
             std::string temp;
             while (true)
@@ -274,10 +274,17 @@ void song::ParseJSON()
         }
         else
         {
-            bpm = arguments.at(0);
-            arguments.erase(arguments.begin());
-            basebeats = arguments.at(0);
-            arguments.erase(arguments.begin());
+            try
+            {
+                bpm = arguments.at(0);
+                arguments.erase(arguments.begin());
+                basebeats = arguments.at(0);
+                arguments.erase(arguments.begin());
+            }
+            catch (const std::exception&)
+            {
+                throw std::runtime_error("Error with arguments");
+            }
         }
         // // // setting BPM and Basebeats
         if (basebeats=="0.125")
@@ -317,7 +324,8 @@ void song::VerifyTracks()
     uint32_t max_size{};
     for (const auto& p : parts)
     {
-        if (p.tracks.size()>max_size) max_size = p.tracks.size();
+        if (p.tracks.size()>max_size)
+            max_size = p.tracks.size();
     }
     for (auto& p : parts)
     {
@@ -326,7 +334,8 @@ void song::VerifyTracks()
             p.tracks.push_back(p.tracks.back());
             for (auto& m : p.tracks.back().messages)
             {
-                if (m.GetType()<2) m=message(0,3);
+                if (m.GetType()<2)
+                    m=message(0,3);
             }
         }
     }
@@ -335,7 +344,7 @@ void song::VerifyTracks()
 void song::MakeMIDI(const std::string& name)
 {
     std::string filename=name;
-    if (name.size()>=5)
+    if (name.size()>=5&&name.substr(name.size()-5,5)==".json")
         filename = name.substr(0,name.size()-5);
     filename += ".mid";
     midi::MIDIfile file(960);
@@ -343,6 +352,8 @@ void song::MakeMIDI(const std::string& name)
     {
         uint16_t track_id{};
         // // //
+        if (p.bpm==0)
+            throw std::invalid_argument("Dividing by 0");
         file.SetTempo(120000000/p.bpm);
         // // //
         for (const auto& t : p.tracks)
