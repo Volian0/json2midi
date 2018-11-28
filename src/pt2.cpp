@@ -2,6 +2,7 @@
 #include "midi.h"
 #include "experimental/json.h" //MEMORY LEAK!
 #include <algorithm>
+#include <cmath>
 
 namespace pt2
 {
@@ -169,7 +170,7 @@ void track::parse(const std::string& score)
                 messages.push_back(message(rest,2));
             }
             else
-                throw std::exception();
+                throw std::runtime_error("Couldn't parse \""+temp+"\"");
         }
     }
     if (mode!=0&&mode!=5)
@@ -299,13 +300,14 @@ void song::ParseJSON()
             throw std::invalid_argument("Wrong BaseBeats");
         try
         {
-            parts.back().bpm = std::stoull(bpm)*parts.back().basebeats;
+            if (bpm.find('.') == std::string::npos)
+                throw std::exception();
+            parts.back().bpm = std::llround(std::stold(bpm)*static_cast<long double>(parts.back().basebeats));
         }
         catch (const std::exception&)
         {
-            parts.back().bpm = std::stold(bpm)*static_cast<long double>(parts.back().basebeats);
+            parts.back().bpm = std::stoull(bpm)*parts.back().basebeats;
         }
-        // // //
         json::JsonArray* scores = part->Find("scores")->GetArray();
         for (uint32_t t=0; t<scores->GetSize(); ++t)
         {
@@ -313,7 +315,14 @@ void song::ParseJSON()
             parts.back().tracks.push_back(track());
             parts.back().tracks.back().basebeats = parts.back().basebeats;
             std::string track = scores->GetValue(t)->GetString();
-            parts.back().tracks.back().parse(track);
+            try
+            {
+                parts.back().tracks.back().parse(track);
+            }
+            catch (const std::exception& e)
+            {
+                throw std::runtime_error("Part "+std::to_string(p+1)+" Track "+std::to_string(t+1)+":\n"+e.what());
+            }
         }
         parts.back().VerifyLength();
     }
