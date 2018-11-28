@@ -61,7 +61,7 @@ public:
     uint32_t divide(uint32_t,uint32_t);
 };
 
-uint8_t GetNote(const std::string&); // 0 - error, 1 - empty/mute, 2 - ~
+uint8_t GetNote(const std::string&); // 0 - error, 1 - empty/mute, 2 - ~, 3 - @, 4 - %
 
 }
 
