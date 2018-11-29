@@ -28,7 +28,8 @@ public:
     uint8_t basebeats;
     std::vector<message> messages;
     void parse(const std::string&);
-    uint32_t GetLength(const std::string&,bool); // 0 - lengths, 1 - rests
+    uint32_t GetLength(const std::string&,bool) const; // 0 - lengths, 1 - rests
+    int32_t operator-(const track& tr) const;
 };
 
 class part
