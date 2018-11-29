@@ -50,14 +50,14 @@ void track::parse(const std::string& score)
             if (mode==2)
                 mode = 1;
             else
-                throw std::exception();
+                throw std::runtime_error(std::string("Unexpected ")+score[i]);
         }
         else if (b=='~')
         {
             if (mode==2)
                 mode = 1;
             else
-                throw std::exception();
+                throw std::runtime_error(std::string("Unexpected ")+score[i]);
             notes.push_back(2);
         }
         else if (b=='(')
@@ -65,35 +65,35 @@ void track::parse(const std::string& score)
             if (mode==0)
                 mode = 1;
             else
-                throw std::exception();
+                throw std::runtime_error(std::string("Unexpected ")+score[i]);
         }
         else if (b==')')
         {
             if (mode==2)
                 mode = 3;
             else
-                throw std::exception();
+                throw std::runtime_error(std::string("Unexpected ")+score[i]);
         }
         else if (b=='[')
         {
             if (mode==3)
                 mode = 4;
             else
-                throw std::exception();
+                throw std::runtime_error(std::string("Unexpected ")+score[i]);
         }
         else if (b==']')
         {
             if (mode==6)
                 mode = 5;
             else
-                throw std::exception();
+                throw std::runtime_error(std::string("Unexpected ")+score[i]);
         }
         else if (b==','||b==';')
         {
             if (mode==5)
                 mode = 0;
             else
-                throw std::exception();
+                throw std::runtime_error(std::string("Unexpected ")+score[i]);
         }
         else
         {
@@ -263,68 +263,75 @@ void song::ParseJSON()
     json::JsonArray* musics = file.value->GetObject()->Find("musics")->GetArray();
     for (uint32_t p=0; p<musics->GetSize(); ++p)
     {
-        std::string bpm;
-        std::string basebeats;
-        parts.push_back(part());
-        //SET BPM AND BASEBEATS
-        json::JsonObject* part = musics->GetValue(p)->GetObject();
-        if (automode)
+        try
         {
-            bpm = part->Find("bpm")->GetString(true);
-            basebeats = part->Find("baseBeats")->GetString(true);
-        }
-        else
-        {
+            std::string bpm;
+            std::string basebeats;
+            parts.push_back(part());
+            //SET BPM AND BASEBEATS
+            json::JsonObject* part = musics->GetValue(p)->GetObject();
+            if (automode)
+            {
+                bpm = part->Find("bpm")->GetString(true);
+                basebeats = part->Find("baseBeats")->GetString(true);
+            }
+            else
+            {
+                try
+                {
+                    bpm = arguments.at(0);
+                    arguments.erase(arguments.begin());
+                    basebeats = arguments.at(0);
+                    arguments.erase(arguments.begin());
+                }
+                catch (const std::exception&)
+                {
+                    throw std::runtime_error("Error with arguments");
+                }
+            }
+            // // // setting BPM and Basebeats
+            if (basebeats=="0.125")
+                parts.back().basebeats = 8;
+            else if (basebeats=="0.25")
+                parts.back().basebeats = 4;
+            else if (basebeats=="0.5")
+                parts.back().basebeats = 2;
+            else if (basebeats=="1")
+                parts.back().basebeats = 1;
+            else
+                throw std::invalid_argument("Wrong BaseBeats");
             try
             {
-                bpm = arguments.at(0);
-                arguments.erase(arguments.begin());
-                basebeats = arguments.at(0);
-                arguments.erase(arguments.begin());
+                if (bpm.find('.')==std::string::npos&&bpm.find('e')==std::string::npos&&bpm.find('E')==std::string::npos)
+                    throw std::exception();
+                parts.back().bpm = std::llround(std::stold(bpm)*static_cast<long double>(parts.back().basebeats));
             }
             catch (const std::exception&)
             {
-                throw std::runtime_error("Error with arguments");
+                parts.back().bpm = std::stoull(bpm)*parts.back().basebeats;
             }
-        }
-        // // // setting BPM and Basebeats
-        if (basebeats=="0.125")
-            parts.back().basebeats = 8;
-        else if (basebeats=="0.25")
-            parts.back().basebeats = 4;
-        else if (basebeats=="0.5")
-            parts.back().basebeats = 2;
-        else if (basebeats=="1")
-            parts.back().basebeats = 1;
-        else
-            throw std::invalid_argument("Wrong BaseBeats");
-        try
-        {
-            if (bpm.find('.') == std::string::npos)
-                throw std::exception();
-            parts.back().bpm = std::llround(std::stold(bpm)*static_cast<long double>(parts.back().basebeats));
-        }
-        catch (const std::exception&)
-        {
-            parts.back().bpm = std::stoull(bpm)*parts.back().basebeats;
-        }
-        json::JsonArray* scores = part->Find("scores")->GetArray();
-        for (uint32_t t=0; t<scores->GetSize(); ++t)
-        {
-            //SET BASEBEATS
-            parts.back().tracks.push_back(track());
-            parts.back().tracks.back().basebeats = parts.back().basebeats;
-            std::string track = scores->GetValue(t)->GetString();
-            try
+            json::JsonArray* scores = part->Find("scores")->GetArray();
+            for (uint32_t t=0; t<scores->GetSize(); ++t)
             {
-                parts.back().tracks.back().parse(track);
+                try
+                {
+                    //SET BASEBEATS
+                    parts.back().tracks.push_back(track());
+                    parts.back().tracks.back().basebeats = parts.back().basebeats;
+                    std::string track = scores->GetValue(t)->GetString();
+                    parts.back().tracks.back().parse(track);
+                }
+                catch(const std::exception& e)
+                {
+                    throw std::runtime_error("Track "+std::to_string(t+1)+":\n"+e.what());
+                }
             }
-            catch (const std::exception& e)
-            {
-                throw std::runtime_error("Part "+std::to_string(p+1)+" Track "+std::to_string(t+1)+":\n"+e.what());
-            }
+            parts.back().VerifyLength();
         }
-        parts.back().VerifyLength();
+        catch(const std::exception& e)
+        {
+            throw std::runtime_error("Part "+std::to_string(p+1)+":\n"+e.what());
+        }
     }
 }
 
