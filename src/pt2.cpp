@@ -22,20 +22,20 @@ message::operator uint32_t() const
 
 void part::VerifyLength()
 {
-    std::vector<uint32_t> hash;
-    for (const auto& tr : tracks)
+    if (tracks.empty())
+        throw std::logic_error("No tracks");
+    for (std::vector<track>::size_type i=1; i<tracks.size(); ++i)
     {
-        hash.push_back(0);
-        for (const auto& msg : tr.messages)
+        int32_t diff = tracks[0]-tracks[i];
+        if (diff<0)
         {
-            if (msg.GetType()==2)
-                hash.back() += msg;
+            throw std::logic_error("Track "+std::to_string(i+1)+" is too long ("+std::to_string(diff)+" ticks)");
+        }
+        else if (diff>0)
+        {
+            tracks[i].messages.push_back(message(diff,2));
         }
     }
-    if (hash.empty())
-        throw std::logic_error("No tracks");
-    if (!(std::adjacent_find(hash.begin(),hash.end(),std::not_equal_to<uint32_t>())==hash.end()))
-        throw std::logic_error("Error with delay");
 }
 
 void track::parse(const std::string& score)
@@ -177,7 +177,7 @@ void track::parse(const std::string& score)
         throw std::exception();
 }
 
-uint32_t track::GetLength(const std::string& n,bool mode)
+uint32_t track::GetLength(const std::string& n,bool mode) const
 {
     uint32_t delay{};
     if (mode)
@@ -239,6 +239,41 @@ uint32_t track::GetLength(const std::string& n,bool mode)
         }
     }
     return delay;
+}
+
+int32_t track::operator-(const track& tr) const
+{
+    int32_t diff{};
+    std::vector<message>::size_type a{};
+    std::vector<message>::size_type b{};
+    std::vector<message> msg_a{messages};
+    std::vector<message> msg_b{tr.messages};
+    while (a<msg_a.size()||b<msg_b.size())
+    {
+        while (a<msg_a.size())
+        {
+            if (msg_a[a]!=0&&msg_a[a].GetType()==2)
+            {
+                msg_a[a] = message(msg_a[a] - 1,2);
+                ++diff;
+                break;
+            }
+            else ++a;
+        }
+        while (b<msg_b.size())
+        {
+            if (msg_b[b]!=0&&msg_b[b].GetType()==2)
+            {
+                msg_b[b] = message(msg_b[b] - 1,2);
+                --diff;
+                break;
+            }
+            else ++b;
+        }
+        if (diff>0xFFFFFFF||diff<-0xFFFFFFF)
+            throw std::overflow_error("Length overflow");
+    }
+    return diff;
 }
 
 song::song(const std::vector<std::string>& args)
