@@ -33,6 +33,7 @@ void part::VerifyLength()
         }
         else if (diff>0)
         {
+            warnings.push_back("Track "+std::to_string(i+1)+" is shorter than the first track ("+std::to_string(diff)+" ticks)");
             tracks[i].messages.push_back(message(diff,2));
         }
     }
@@ -282,6 +283,7 @@ song::song(const std::vector<std::string>& args)
     ParseJSON();
     VerifyTracks();
     MakeMIDI(args.at(0));
+    CheckWarnings();
 }
 
 void song::ParseJSON()
@@ -424,6 +426,22 @@ void song::MakeMIDI(const std::string& name)
         }
     }
     file.Create(filename);
+}
+
+void song::CheckWarnings() const
+{
+    std::string exceptions;
+    for (uint32_t p=0;p<parts.size();++p)
+    {
+        if (!parts[p].warnings.empty())
+            exceptions += "Part "+std::to_string(p+1)+":\n";
+        for (const auto& w : parts[p].warnings)
+        {
+            exceptions += w + "\n";
+        }
+    }
+    if (!exceptions.empty())
+        throw std::runtime_error(exceptions);
 }
 
 uint32_t safe_divider::divide(uint32_t a,uint32_t b)
