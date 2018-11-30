@@ -39,6 +39,7 @@ public:
     uint32_t bpm; // tempo
     uint8_t basebeats; // multiplier for tempo and tile length
     std::vector<track> tracks;
+    std::vector<std::string> warnings;
     void VerifyLength();
 };
 
@@ -50,6 +51,7 @@ protected:
     void ParseJSON();
     void VerifyTracks();
     void MakeMIDI(const std::string&);
+    void CheckWarnings() const;
 public:
     song(const std::vector<std::string>&);
 };
