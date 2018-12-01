@@ -61,6 +61,22 @@ void track::parse(const std::string& score)
                 throw std::runtime_error(std::string("Unexpected ")+score[i]);
             notes.push_back(2);
         }
+        else if (b=='@')
+        {
+            if (mode==2)
+                mode = 1;
+            else
+                throw std::runtime_error(std::string("Unexpected ")+score[i]);
+            notes.push_back(3);
+        }
+        else if (b=='%')
+        {
+            if (mode==2)
+                mode = 1;
+            else
+                throw std::runtime_error(std::string("Unexpected ")+score[i]);
+            notes.push_back(4);
+        }
         else if (b=='(')
         {
             if (mode==0)
@@ -110,7 +126,8 @@ void track::parse(const std::string& score)
                 if (i==score.size()||score[i]=='.'||score[i]=='('
                         ||score[i]==')'||score[i]=='~'||score[i]=='['
                         ||score[i]==']'||score[i]==','||score[i]==';'
-                        ||score[i]=='<'||score[i]=='>')
+                        ||score[i]=='<'||score[i]=='>'||score[i]=='@'
+                        ||score[i]=='%')
                 {
                     --i;
                     break;
@@ -127,7 +144,8 @@ void track::parse(const std::string& score)
                     mode = 2;
                 else
                     throw std::exception();
-                notes.push_back(note);
+                if (note != 1)
+                    notes.push_back(note);
             }
             else if (length)
             {
@@ -137,28 +155,78 @@ void track::parse(const std::string& score)
                     throw std::exception();
                 // // //flush notes
                 uint32_t div = std::count(notes.begin(),notes.end(),2) + 1;
+                uint32_t arp1 = std::count(notes.begin(),notes.end(),3); //@
+                uint32_t arp2 = std::count(notes.begin(),notes.end(),4); //%
+                if ((arp1>0&&div>1)||(arp2>0&&div>1)||(arp1>0&&arp2>0))
+                    throw std::logic_error("Problem with arpeggios");
                 safe_divider sdiv;
                 std::vector<uint8_t> tempnotes;
-                for (auto n = notes.begin(); n<=notes.end(); ++n)
+                if (arp1)
                 {
-                    if (n==notes.end()||*n==2)
+                    for (auto n = notes.begin(); n<=notes.end(); ++n)
                     {
-                        for (auto tn : tempnotes)
+                        if (n==notes.end())
                         {
-                            messages.push_back(message(tn,0));
+                            messages.push_back(message(length,2));
+                            for (auto tn : notes)
+                                if (tn!=3)
+                                    messages.push_back(message(tn,1));
                         }
-                        messages.push_back(message(sdiv.divide(length,div),2));
-                        for (auto tn : tempnotes)
+                        else if (*n==3)
                         {
-                            messages.push_back(message(tn,1));
+                            uint32_t delay;
+                            if (arp1==1)
+                                delay = sdiv.divide(length,10);
+                            else
+                                delay = sdiv.divide(length,10*(arp1-1));
+                            if (delay>length)
+                                throw std::logic_error("Fatal error with @");
+                            length = length - delay;
+                            messages.push_back(message(delay,2));
                         }
-                        tempnotes.clear();
-                    }
-                    else if (*n!=1)
-                    {
-                        tempnotes.push_back(*n);
+                        else
+                            messages.push_back(message(*n,0));
                     }
                 }
+                else if (arp2)
+                {
+                    for (auto n = notes.begin(); n<=notes.end(); ++n)
+                    {
+                        if (n==notes.end())
+                        {
+                            messages.push_back(message(length,2));
+                            for (auto tn : notes)
+                                if (tn!=4)
+                                    messages.push_back(message(tn,1));
+                        }
+                        else if (*n==4)
+                        {
+                            uint32_t delay;
+                            delay = sdiv.divide(3*length,10*arp2);
+                            if (delay>length)
+                                throw std::logic_error("Fatal error with %");
+                            length = length - delay;
+                            messages.push_back(message(delay,2));
+                        }
+                        else
+                            messages.push_back(message(*n,0));
+                    }
+                }
+                else
+                    for (auto n = notes.begin(); n<=notes.end(); ++n)
+                    {
+                        if (n==notes.end()||*n==2)
+                        {
+                            for (auto tn : tempnotes)
+                                messages.push_back(message(tn,0));
+                            messages.push_back(message(sdiv.divide(length,div),2));
+                            for (auto tn : tempnotes)
+                                messages.push_back(message(tn,1));
+                            tempnotes.clear();
+                        }
+                        else
+                            tempnotes.push_back(*n);
+                    }
                 notes.clear();
                 // // //
             }
@@ -431,7 +499,7 @@ void song::MakeMIDI(const std::string& name)
 void song::CheckWarnings() const
 {
     std::string exceptions;
-    for (uint32_t p=0;p<parts.size();++p)
+    for (uint32_t p=0; p<parts.size(); ++p)
     {
         if (!parts[p].warnings.empty())
             exceptions += "Part "+std::to_string(p+1)+":\n";
