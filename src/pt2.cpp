@@ -351,7 +351,6 @@ song::song(const std::vector<std::string>& args)
     ParseJSON();
     VerifyTracks();
     MakeMIDI(args.at(0));
-    CheckWarnings();
 }
 
 void song::ParseJSON()
