@@ -51,9 +51,9 @@ protected:
     void ParseJSON();
     void VerifyTracks();
     void MakeMIDI(const std::string&);
-    void CheckWarnings() const;
 public:
     song(const std::vector<std::string>&);
+    void CheckWarnings() const;
 };
 
 class safe_divider // class for dividing in a safe way
