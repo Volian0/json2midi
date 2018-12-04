@@ -17,7 +17,7 @@ try
     }
     catch (const std::exception& e)
     {
-        std::cout << "Warnings:\n" << e.what() << std::endl;
+        std::cout << "Warnings:\n" << e.what() << std::flush;
         if (args.empty()||args.back()!="-f")
             std::cin.get();
     }
@@ -37,26 +37,29 @@ void handle_csv(const std::string& filename)
     csv::CSVfile csv(filename);
     uint32_t stat_allsongs{};
     uint32_t stat_goodsongs{};
-    for (const auto& r : csv.records)
+    for (auto i=csv.records.begin(); i<=csv.records.end(); ++i)
     {
-        if (!args.empty()&&args[0]!=r.fields.at(5))
+        if (!args.empty()&&(i==csv.records.end()||args[0]!=i->fields.at(5)))
         {
             ++stat_allsongs;
             args[0] = args[0] + ".json";
             args.push_back("-f");
-            if (handle_song(args)==0) ++stat_goodsongs;
+            if (handle_song(args)==0)
+                ++stat_goodsongs;
             args.clear();
         }
-        if (r.fields.at(2).empty()||r.fields.at(3).empty())
+        if (i==csv.records.end())
+            break;
+        if (i->fields.at(2).empty()||i->fields.at(3).empty())
         {
             args.clear();
         }
         else
         {
             if (args.empty())
-                args.push_back(r.fields.at(5));
-            args.push_back(r.fields.at(2));
-            args.push_back(r.fields.at(3));
+                args.push_back(i->fields.at(5));
+            args.push_back(i->fields.at(2));
+            args.push_back(i->fields.at(3));
         }
     }
     std::cout << "================================" << std::endl;
