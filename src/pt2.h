@@ -30,6 +30,7 @@ public:
     void parse(const std::string&);
     uint32_t GetLength(const std::string&,bool) const; // 0 - lengths, 1 - rests
     int32_t operator-(const track& tr) const;
+    void shrink(uint32_t);
 };
 
 class part
