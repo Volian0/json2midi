@@ -29,7 +29,8 @@ void part::VerifyLength()
         int32_t diff = tracks[0]-tracks[i];
         if (diff<0)
         {
-            throw std::logic_error("Track "+std::to_string(i+1)+" is too long ("+std::to_string(diff)+" ticks)");
+            warnings.push_back("Track "+std::to_string(i+1)+" is too long ("+std::to_string(diff)+" ticks) - TRACK WILL BE SHRINKED");
+            tracks[i].shrink(-diff);
         }
         else if (diff>0)
         {
@@ -343,6 +344,48 @@ int32_t track::operator-(const track& tr) const
             throw std::overflow_error("Length overflow");
     }
     return diff;
+}
+
+void track::shrink(uint32_t a)
+{
+    for (std::vector<message>::size_type i{messages.size()}; i>0; --i)
+    {
+        if (messages[i-1].GetType()==2)
+        {
+            int32_t diff = a - messages[i-1];
+            if (diff>=0)
+            {
+                a = diff;
+                messages[i-1] = message(0,2);
+            }
+            else if (diff<0)
+            {
+                a = 0;
+                messages[i-1] = message(-diff,2);
+            }
+            if (a==0)
+                break;
+        }
+    }
+    if (a!=0)
+        throw std::logic_error("This shouldn't happen, contact Volian0");
+    //note cleaning...
+    std::vector<message*> note_on;
+    for (auto& m : messages)
+    {
+        if (m.GetType()==2&&m>0)
+            note_on.clear();
+        else if (m.GetType()==0)
+            note_on.push_back(&m);
+        else if (m.GetType()==1)
+            for (auto& n : note_on)
+                if (n->GetType()==0&&m==*n)
+                {
+                    m=message(0,3);
+                    *n=message(0,3);
+                    break;
+                }
+    }
 }
 
 song::song(const std::vector<std::string>& args)
