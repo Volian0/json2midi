@@ -110,7 +110,7 @@ void track::parse(const std::string& score)
         {
             if (mode==5)
                 mode = 0;
-            else
+            else if (mode!=0)
                 throw std::runtime_error(std::string("Unexpected ")+score[i]);
         }
         else
