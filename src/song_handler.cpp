@@ -23,6 +23,8 @@ try
                         std::cout << "    " << w << std::endl;
                 }
         }
+    if (args.empty()||args.back()!="-f")
+            std::cin.get();
     return 0;
 }
 catch (const std::exception& e)
