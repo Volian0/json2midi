@@ -26,6 +26,7 @@ protected:
     //std::string instrument; // optional, used for patching
 public:
     uint8_t basebeats;
+    std::vector<std::string> warnings;
     std::vector<message> messages;
     void parse(const std::string&);
     uint32_t GetLength(const std::string&,bool) const; // 0 - lengths, 1 - rests
@@ -40,21 +41,20 @@ public:
     uint32_t bpm; // tempo
     uint8_t basebeats; // multiplier for tempo and tile length
     std::vector<track> tracks;
-    std::vector<std::string> warnings;
     void VerifyLength();
+    bool HasWarnings() const;
 };
 
 class song // this class handles json to midi conversion
 {
 protected:
     std::vector<std::string> arguments;
-    std::vector<part> parts;
     void ParseJSON();
     void VerifyTracks();
     void MakeMIDI(const std::string&);
 public:
+    std::vector<part> parts;
     song(const std::vector<std::string>&);
-    void CheckWarnings() const;
 };
 
 class safe_divider // class for dividing in a safe way

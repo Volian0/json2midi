@@ -11,16 +11,18 @@ try
 {
     std::cout << args.at(0) << std::endl;
     song song(args);
-    try
-    {
-        song.CheckWarnings();
-    }
-    catch (const std::exception& e)
-    {
-        std::cout << "Warnings:\n" << e.what() << std::flush;
-        if (args.empty()||args.back()!="-f")
-            std::cin.get();
-    }
+    for (uint32_t p=0; p<song.parts.size(); ++p)
+        if (song.parts[p].HasWarnings())
+        {
+            std::cout << "Part " << p+1 << ":" << std::endl;
+            for (uint32_t t=0; t<song.parts[p].tracks.size(); ++t)
+                if (!song.parts[p].tracks[t].warnings.empty())
+                {
+                    std::cout << "  Track " << t+1 << ":" << std::endl;
+                    for (const auto& w : song.parts[p].tracks[t].warnings)
+                        std::cout << "    " << w << std::endl;
+                }
+        }
     return 0;
 }
 catch (const std::exception& e)

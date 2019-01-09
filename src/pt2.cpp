@@ -29,15 +29,23 @@ void part::VerifyLength()
         int32_t diff = tracks[0]-tracks[i];
         if (diff<0)
         {
-            warnings.push_back("Track "+std::to_string(i+1)+" is too long ("+std::to_string(diff)+" ticks) - TRACK WILL BE SHRINKED");
+            tracks[i].warnings.push_back("Track is too long ("+std::to_string(diff)+" ticks) - TRACK WILL BE SHRINKED");
             tracks[i].shrink(-diff);
         }
         else if (diff>0)
         {
-            warnings.push_back("Track "+std::to_string(i+1)+" is shorter than the first track ("+std::to_string(diff)+" ticks)");
+            tracks[i].warnings.push_back("Track is shorter than the first track ("+std::to_string(diff)+" ticks)");
             tracks[i].messages.push_back(message(diff,2));
         }
     }
+}
+
+bool part::HasWarnings() const
+{
+    for (const auto& t : tracks)
+        if (!t.warnings.empty())
+            return true;
+    return false;
 }
 
 void track::parse(const std::string& score)
@@ -110,11 +118,18 @@ void track::parse(const std::string& score)
         {
             if (mode==5)
                 mode = 0;
-            else if (mode!=0)
+            else if (mode==0)
+                warnings.push_back("Duplicated , or ;");
+            else
                 throw std::runtime_error(std::string("Unexpected ")+score[i]);
         }
         else
         {
+            if (score[i]==' ')
+            {
+                warnings.push_back("Space in code");
+                continue;
+            }
             if ((score[i]=='<'||(score[i]>='0'&&score[i]<='9'))&&mode==0)
                 continue;
             if ((score[i]=='>'||score[i]=='{'||score[i]=='}'||(score[i]>='0'&&score[i]<='9'))&&mode==5)
@@ -234,10 +249,17 @@ void track::parse(const std::string& score)
             else if (rest)
             {
                 if (mode==0)
+                {
                     mode = 5;
+                    messages.push_back(message(rest,2));
+                }
+                else if (mode==1)
+                {
+                    warnings.push_back("\""+temp+"\" inside () converted to mute");
+                    mode = 2;
+                }
                 else
                     throw std::exception();
-                messages.push_back(message(rest,2));
             }
             else
                 throw std::runtime_error("Couldn't parse \""+temp+"\"");
@@ -538,7 +560,7 @@ void song::MakeMIDI(const std::string& name)
     file.Create(filename);
 }
 
-void song::CheckWarnings() const
+/**void song::CheckWarnings() const
 {
     std::string exceptions;
     for (uint32_t p=0; p<parts.size(); ++p)
@@ -552,7 +574,7 @@ void song::CheckWarnings() const
     }
     if (!exceptions.empty())
         throw std::runtime_error(exceptions);
-}
+}**/
 
 uint32_t safe_divider::divide(uint32_t a,uint32_t b)
 {
