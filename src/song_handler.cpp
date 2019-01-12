@@ -35,12 +35,15 @@ catch (const std::exception& e)
     return -1;
 }
 
-void handle_csv(const std::string& filename)
+void handle_csv(const std::string& filename,bool old)
 {
     std::vector<std::string> args;
     csv::CSVfile csv(filename);
     uint32_t stat_allsongs{};
     uint32_t stat_goodsongs{};
+    uint8_t bpm{2};
+    if (old)
+        bpm = 4;
     for (auto i=csv.records.begin(); i<=csv.records.end(); ++i)
     {
         if (!args.empty()&&(i==csv.records.end()||args[0]!=i->fields.at(5)))
@@ -54,7 +57,7 @@ void handle_csv(const std::string& filename)
         }
         if (i==csv.records.end())
             break;
-        if (i->fields.at(2).empty()||i->fields.at(3).empty())
+        if (i->fields.at(bpm).empty()||i->fields.at(3).empty())
         {
             args.clear();
         }
@@ -62,7 +65,7 @@ void handle_csv(const std::string& filename)
         {
             if (args.empty())
                 args.push_back(i->fields.at(5));
-            args.push_back(i->fields.at(2));
+            args.push_back(i->fields.at(bpm));
             args.push_back(i->fields.at(3));
         }
     }
@@ -78,7 +81,7 @@ int handle_file(const std::vector<std::string>& args)
 {
     const std::string& name = args.at(0);
     if (name.size()>=4&&name.substr(name.size()-4,4)==".csv")
-        handle_csv(name);
+        handle_csv(name,(args.back()=="-old"));
     else
         return handle_song(args);
     return 0;
