@@ -278,23 +278,23 @@ uint32_t track::GetLength(const std::string& n,bool mode) const
         {
             //Q-Y
             if (b=='Q')
-                delay+= 256*basebeats*15;
+                delay+= 256*basebeats;
             else if (b=='R')
-                delay+= 128*basebeats*15;
+                delay+= 128*basebeats;
             else if (b=='S')
-                delay+= 64*basebeats*15;
+                delay+= 64*basebeats;
             else if (b=='T')
-                delay+= 32*basebeats*15;
+                delay+= 32*basebeats;
             else if (b=='U')
-                delay+= 16*basebeats*15;
+                delay+= 16*basebeats;
             else if (b=='V')
-                delay+= 8*basebeats*15;
+                delay+= 8*basebeats;
             else if (b=='W')
-                delay+= 4*basebeats*15;
+                delay+= 4*basebeats;
             else if (b=='X')
-                delay+= 2*basebeats*15;
+                delay+= 2*basebeats;
             else if (b=='Y')
-                delay+= 1*basebeats*15;
+                delay+= 1*basebeats;
             else
                 return 0;
             if(delay>0xFFFFFFF)
@@ -307,23 +307,23 @@ uint32_t track::GetLength(const std::string& n,bool mode) const
         {
             //H-P
             if (b=='H')
-                delay+= 256*basebeats*15;
+                delay+= 256*basebeats;
             else if (b=='I')
-                delay+= 128*basebeats*15;
+                delay+= 128*basebeats;
             else if (b=='J')
-                delay+= 64*basebeats*15;
+                delay+= 64*basebeats;
             else if (b=='K')
-                delay+= 32*basebeats*15;
+                delay+= 32*basebeats;
             else if (b=='L')
-                delay+= 16*basebeats*15;
+                delay+= 16*basebeats;
             else if (b=='M')
-                delay+= 8*basebeats*15;
+                delay+= 8*basebeats;
             else if (b=='N')
-                delay+= 4*basebeats*15;
+                delay+= 4*basebeats;
             else if (b=='O')
-                delay+= 2*basebeats*15;
+                delay+= 2*basebeats;
             else if (b=='P')
-                delay+= 1*basebeats*15;
+                delay+= 1*basebeats;
             else
                 return 0;
             if(delay>0xFFFFFFF)
@@ -459,26 +459,77 @@ void song::ParseJSON()
                 }
             }
             // // // setting BPM and Basebeats
-            if (basebeats=="0.125")
-                parts.back().basebeats = 8;
-            else if (basebeats=="0.25")
-                parts.back().basebeats = 4;
-            else if (basebeats=="0.5")
-                parts.back().basebeats = 2;
-            else if (basebeats=="1")
+            if (basebeats=="15")
                 parts.back().basebeats = 1;
+            else if (basebeats=="7.5")
+                parts.back().basebeats = 2;
+            else if (basebeats=="5")
+                parts.back().basebeats = 3;
+            else if (basebeats=="3.75")
+                parts.back().basebeats = 4;
+            else if (basebeats=="3")
+                parts.back().basebeats = 5;
+            else if (basebeats=="2.5")
+                parts.back().basebeats = 6;
+            else if (basebeats=="1.875")
+                parts.back().basebeats = 8;
+            else if (basebeats=="1.5")
+                parts.back().basebeats = 10;
+            else if (basebeats=="1.25")
+                parts.back().basebeats = 12;
+            else if (basebeats=="1")
+                parts.back().basebeats = 15;
+            else if (basebeats=="0.9375")
+                parts.back().basebeats = 16;
+            else if (basebeats=="0.75")
+                parts.back().basebeats = 20;
+            else if (basebeats=="0.625")
+                parts.back().basebeats = 24;
+            else if (basebeats=="0.5")
+                parts.back().basebeats = 30;
+            else if (basebeats=="0.46875")
+                parts.back().basebeats = 32;
+            else if (basebeats=="0.375")
+                parts.back().basebeats = 40;
+            else if (basebeats=="0.3125")
+                parts.back().basebeats = 48;
+            else if (basebeats=="0.25")
+                parts.back().basebeats = 60;
+            else if (basebeats=="0.234375")
+                parts.back().basebeats = 64;
+            else if (basebeats=="0.1875")
+                parts.back().basebeats = 80;
+            else if (basebeats=="0.15625")
+                parts.back().basebeats = 96;
+            else if (basebeats=="0.125")
+                parts.back().basebeats = 120;
+            else if (basebeats=="0.1171875")
+                parts.back().basebeats = 128;
+            else if (basebeats=="0.09375")
+                parts.back().basebeats = 160;
+            else if (basebeats=="0.078125")
+                parts.back().basebeats = 192;
+            else if (basebeats=="0.0625")
+                parts.back().basebeats = 240;
+            else if (basebeats=="0.05859375")
+                parts.back().basebeats = 256;
+            else if (basebeats=="0.046875")
+                parts.back().basebeats = 320;
+            else if (basebeats=="0.0390625")
+                parts.back().basebeats = 384;
+            else if (basebeats=="0.03125")
+                parts.back().basebeats = 480;
+            else if (basebeats=="0.029296875")
+                parts.back().basebeats = 512;
+            else if (basebeats=="0.0234375")
+                parts.back().basebeats = 640;
+            else if (basebeats=="0.01953125")
+                parts.back().basebeats = 768;
+            else if (basebeats=="0.015625")
+                parts.back().basebeats = 960;
             else
                 throw std::invalid_argument("Wrong BaseBeats");
-            try
-            {
-                if (bpm.find('.')==std::string::npos&&bpm.find('e')==std::string::npos&&bpm.find('E')==std::string::npos)
-                    throw std::exception();
-                parts.back().bpm = std::llround(std::stold(bpm)*static_cast<long double>(parts.back().basebeats));
-            }
-            catch (const std::exception&)
-            {
-                parts.back().bpm = std::stoull(bpm)*parts.back().basebeats;
-            }
+            parts.back().bpm = std::stold(bpm)*parts.back().basebeats;
             json::JsonArray* scores = part->Find("scores")->GetArray();
             for (uint32_t t=0; t<scores->GetSize(); ++t)
             {
@@ -539,7 +590,7 @@ void song::MakeMIDI(const std::string& name)
         // // //
         if (p.bpm==0)
             throw std::invalid_argument("Dividing by 0");
-        file.SetTempo(120000000/p.bpm);
+        file.SetTempo(1800000000/p.bpm);
         // // //
         for (const auto& t : p.tracks)
         {
@@ -559,22 +610,6 @@ void song::MakeMIDI(const std::string& name)
     }
     file.Create(filename);
 }
-
-/**void song::CheckWarnings() const
-{
-    std::string exceptions;
-    for (uint32_t p=0; p<parts.size(); ++p)
-    {
-        if (!parts[p].warnings.empty())
-            exceptions += "Part "+std::to_string(p+1)+":\n";
-        for (const auto& w : parts[p].warnings)
-        {
-            exceptions += w + "\n";
-        }
-    }
-    if (!exceptions.empty())
-        throw std::runtime_error(exceptions);
-}**/
 
 uint32_t safe_divider::divide(uint32_t a,uint32_t b)
 {
