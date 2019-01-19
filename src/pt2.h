@@ -25,7 +25,7 @@ class track
 protected:
     //std::string instrument; // optional, used for patching
 public:
-    uint8_t basebeats;
+    uint16_t basebeats;
     std::vector<std::string> warnings;
     std::vector<message> messages;
     void parse(const std::string&);
@@ -38,8 +38,8 @@ class part
 {
 protected:
 public:
-    uint32_t bpm; // tempo
-    uint8_t basebeats; // multiplier for tempo and tile length
+    long double bpm; // tempo
+    uint16_t basebeats; // multiplier for tempo and tile length
     std::vector<track> tracks;
     void VerifyLength();
     bool HasWarnings() const;
