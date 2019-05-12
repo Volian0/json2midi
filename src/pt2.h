@@ -28,7 +28,7 @@ public:
     uint16_t basebeats;
     std::vector<std::string> warnings;
     std::vector<message> messages;
-    void parse(const std::string&);
+    void parse(const std::string&,long double);
     uint32_t GetLength(const std::string&,bool) const; // 0 - lengths, 1 - rests
     int32_t operator-(const track& tr) const;
     void shrink(uint32_t);
@@ -65,7 +65,7 @@ public:
     uint32_t divide(uint32_t,uint32_t);
 };
 
-uint8_t GetNote(const std::string&); // 0 - error, 1 - empty/mute, 2 - ~, 3 - @, 4 - %
+uint8_t GetNote(const std::string&); // 0 - error, 1 - empty/mute, 2 - ~, 3 - @, 4 - %, 5 - !, 6 - ^
 
 }
 

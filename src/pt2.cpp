@@ -48,7 +48,7 @@ bool part::HasWarnings() const
     return false;
 }
 
-void track::parse(const std::string& score)
+void track::parse(const std::string& score,long double bpm)
 {
     uint8_t mode=0;
     std::vector<uint8_t> notes;
@@ -62,7 +62,7 @@ void track::parse(const std::string& score)
             else
                 throw std::runtime_error(std::string("Unexpected ")+score[i]);
         }
-        else if (b=='~')
+        else if (b=='~'||b=='$')
         {
             if (mode==2)
                 mode = 1;
@@ -85,6 +85,22 @@ void track::parse(const std::string& score)
             else
                 throw std::runtime_error(std::string("Unexpected ")+score[i]);
             notes.push_back(4);
+        }
+        else if (b=='!')
+        {
+            if (mode==2)
+                mode = 1;
+            else
+                throw std::runtime_error(std::string("Unexpected ")+score[i]);
+            notes.push_back(5);
+        }
+        else if (b=='^'||b=='&')
+        {
+            if (mode==2)
+                mode = 1;
+            else
+                throw std::runtime_error(std::string("Unexpected ")+score[i]);
+            notes.push_back(6);
         }
         else if (b=='(')
         {
@@ -143,7 +159,8 @@ void track::parse(const std::string& score)
                         ||score[i]==')'||score[i]=='~'||score[i]=='['
                         ||score[i]==']'||score[i]==','||score[i]==';'
                         ||score[i]=='<'||score[i]=='>'||score[i]=='@'
-                        ||score[i]=='%')
+                        ||score[i]=='%'||score[i]=='!'||score[i]=='$'
+                        ||score[i]=='^'||score[i]=='&')
                 {
                     --i;
                     break;
@@ -170,11 +187,14 @@ void track::parse(const std::string& score)
                 else
                     throw std::exception();
                 // // //flush notes
-                uint32_t div = std::count(notes.begin(),notes.end(),2) + 1;
-                uint32_t arp1 = std::count(notes.begin(),notes.end(),3); //@
-                uint32_t arp2 = std::count(notes.begin(),notes.end(),4); //%
-                if ((arp1>0&&div>1)||(arp2>0&&div>1)||(arp1>0&&arp2>0))
-                    throw std::logic_error("Problem with arpeggios");
+                uint32_t div = std::count(notes.begin(),notes.end(),2);  // ~
+                uint32_t arp1 = std::count(notes.begin(),notes.end(),3); // @
+                uint32_t arp2 = std::count(notes.begin(),notes.end(),4); // %
+                uint32_t arp3 = std::count(notes.begin(),notes.end(),5); // !
+                uint32_t arp4 = std::count(notes.begin(),notes.end(),6); // ^
+                if (uint32_t(div>0)+uint32_t(arp1>0)+uint32_t(arp2>0)+uint32_t(arp3>0)+uint32_t(arp4>0)>1||arp4>1)
+                    throw std::logic_error("Problem with operators");
+                div = div + 1;
                 safe_divider sdiv;
                 std::vector<uint8_t> tempnotes;
                 if (arp1)
@@ -226,6 +246,65 @@ void track::parse(const std::string& score)
                         }
                         else
                             messages.push_back(message(*n,0));
+                    }
+                }
+                else if (arp3)
+                {
+                    for (auto n = notes.begin(); n<=notes.end(); ++n)
+                    {
+                        if (n==notes.end())
+                        {
+                            messages.push_back(message(length,2));
+                            for (auto tn : notes)
+                                if (tn!=5)
+                                    messages.push_back(message(tn,1));
+                        }
+                        else if (*n==5)
+                        {
+                            uint32_t delay;
+                            delay = sdiv.divide(3*length,20*arp3);
+                            if (delay>length)
+                                throw std::logic_error("Fatal error with !");
+                            length = length - delay;
+                            messages.push_back(message(delay,2));
+                        }
+                        else
+                            messages.push_back(message(*n,0));
+                    }
+                }
+                else if (arp4)
+                {
+                    if (notes.size()!=3||notes.at(1)!=6||notes.at(0)<20||notes.at(2)<20)
+                        throw std::logic_error("Problem with ornament");
+                    //how long is 1/12 of a second?
+                    uint8_t note_flip = 0;
+                    uint32_t bpm32 = bpm * 32;
+                    while (true)
+                    {
+                        //play note
+                        messages.push_back(message(notes.at(note_flip),0));
+                        //wait
+                        uint32_t delay = sdiv.divide(bpm32,720);
+                        if (delay>=length) //end
+                        {
+                            //wait length
+                            messages.push_back(message(length,2));
+                            //note off
+                            messages.push_back(message(notes.at(note_flip),1));
+                            break;
+                        }
+                        else
+                        {
+                            length = length - delay;
+                            //wait delay
+                            messages.push_back(message(delay,2));
+                            //note off
+                            messages.push_back(message(notes.at(note_flip),1));
+                        }
+                        if (note_flip==0)
+                            note_flip=2;
+                        else if (note_flip==2)
+                            note_flip=0;
                     }
                 }
                 else
@@ -539,7 +618,7 @@ void song::ParseJSON()
                     parts.back().tracks.push_back(track());
                     parts.back().tracks.back().basebeats = parts.back().basebeats;
                     std::string track = scores->GetValue(t)->GetString();
-                    parts.back().tracks.back().parse(track);
+                    parts.back().tracks.back().parse(track,parts.back().bpm);
                 }
                 catch(const std::exception& e)
                 {
