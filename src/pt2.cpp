@@ -647,6 +647,7 @@ void song::VerifyTracks()
         while (p.tracks.size()<max_size)
         {
             p.tracks.push_back(p.tracks.back());
+            p.tracks.back().warnings.clear();
             for (auto& m : p.tracks.back().messages)
             {
                 if (m.GetType()<2)
